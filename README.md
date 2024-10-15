@@ -29,10 +29,6 @@ Follow these steps to set up and run the application:
    git clone https://github.com/deva0516/internet-speed-test-using-python-flask.git
    cd internet-speed-test-using-python-flask
 
-##Install Required Packages
-  ```bash
-  pip install Flask speedtest-cli
-
-Access the Application
-Open a web browser.
-Go to http://127.0.0.1:5000/ to view the internet speed test interface.
+## Install Required Packages
+   ```bash
+   pip install Flask speedtest-cli
