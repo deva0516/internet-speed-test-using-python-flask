@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Internet Speed Test</title>
+    <!-- Include CanvasGauge Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-gauges@2.1.7/gauge.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        /* Test Button Styling */
+        #testButton {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #007BFF;
+            color: white;
+            font-size: 18px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+            margin-bottom: 40px;
+        }
+        #testButton:hover {
+            background-color: #0056b3;
+        }
+        .speedometers {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        .speedometer-container {
+            position: relative; /* For tooltip positioning */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .gauge {
+            width: 200px;
+            height: 100px;
+        }
+        .label {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        /* Tooltip Styling */
+        .tooltip {
+            visibility: hidden;
+            width: 160px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px 0;
+            position: absolute;
+            bottom: 120%; /* Position above the gauge */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%; /* At the bottom of the tooltip */
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+        }
+        .speedometer-container:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        /* Results Section */
+        .results {
+            margin-top: 30px;
+            font-size: 18px;
+        }
+        .results div {
+            margin: 10px 0;
+        }
+        /* Loading Spinner */
+        #loading {
+            display: none;
+            margin-top: 20px;
+        }
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .speedometers {
+                flex-direction: column;
+                gap: 60px;
+            }
+            #testButton {
+                width: 80px;
+                height: 80px;
+                font-size: 16px;
+            }
+            .tooltip {
+                width: 140px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Internet Speed Test</h1>
+
+    <!-- Test Button -->
+    <button id="testButton">Test</button>
+
+    <!-- Loading Indicator -->
+    <div id="loading">
+        <p>Testing...</p>
+    </div>
+
+    <!-- Speedometers -->
+    <div class="speedometers">
+        <div class="speedometer-container">
+            <canvas id="downloadSpeedometer" class="gauge"></canvas>
+            <div class="results" id="results">
+            <div class="label" id="download">Download Speed: N/A Mbps</div>
+            </div>
+            <div class="tooltip" id="downloadTooltip">Type: Download<br>Speed: 0 Mbps</div>
+        </div>
+        <div class="speedometer-container">
+            <canvas id="uploadSpeedometer" class="gauge"></canvas>
+            <div class="results" id="results">
+            <div class="label" id="upload">Upload Speed: N/A Mbps</div>
+            </div>
+            <div class="tooltip" id="uploadTooltip">Type: Upload<br>Speed: 0 Mbps</div>
+        </div>
+        <div class="speedometer-container">
+            <canvas id="pingSpeedometer" class="gauge"></canvas>
+            <div class="results" id="results">
+            <div class="label" id="ping">Ping: N/A ms</div>
+            </div>
+            <div class="tooltip" id="pingTooltip">Type: Ping<br>Speed: 0 ms</div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results" id="results">
+        <div id="network">Connected Network: N/A</div>
+    </div>
+
+    <script>
+        // Initialize Download Speedometer
+        var downloadGauge = new RadialGauge({
+            renderTo: 'downloadSpeedometer',
+            width: 300,
+            height: 150,
+            units: "Mbps",
+            minValue: 0,
+            maxValue: 100,
+            majorTicks: [
+                "0","10","20","30","40","50","60","70","80","90","100"
+            ],
+            minorTicks: 2,
+            strokeTicks: true,
+            highlights: [
+                { from: 0, to: 50, color: 'rgba(0,255,0,0.5)' },
+                { from: 50, to: 80, color: 'rgba(255,255,0,0.5)' },
+                { from: 80, to: 100, color: 'rgba(255,30,0,0.5)' }
+            ],
+            colorPlate: "#fff",
+            colorMajorTicks: "#000",
+            colorMinorTicks: "#000",
+            colorTitle: "#000",
+            colorUnits: "#000",
+            colorNumbers: "#000",
+            colorNeedle: "rgba(0, 0, 0, 1)",
+            colorNeedleEnd: "rgba(0, 0, 0, 0.9)",
+            valueBox: false,
+            animationRule: "linear",
+            animationDuration: 1500,
+            borders: false,
+            needleType: "arrow",
+            needleWidth: 2,
+            startAngle: 180,
+            ticksAngle: 180,
+            value: 0 // Initial value
+        }).draw();
+
+        // Initialize Upload Speedometer
+        var uploadGauge = new RadialGauge({
+            renderTo: 'uploadSpeedometer',
+            width: 300,
+            height: 150,
+            units: "Mbps",
+            minValue: 0,
+            maxValue: 100,
+            majorTicks: [
+                "0","10","20","30","40","50","60","70","80","90","100"
+            ],
+            minorTicks: 2,
+            strokeTicks: true,
+            highlights: [
+                { from: 0, to: 50, color: 'rgba(0,255,0,0.5)' },
+                { from: 50, to: 80, color: 'rgba(255,255,0,0.5)' },
+                { from: 80, to: 100, color: 'rgba(255,30,0,0.5)' }
+            ],
+            colorPlate: "#fff",
+            colorMajorTicks: "#000",
+            colorMinorTicks: "#000",
+            colorTitle: "#000",
+            colorUnits: "#000",
+            colorNumbers: "#000",
+            colorNeedle: "rgba(0, 0, 0, 1)",
+            colorNeedleEnd: "rgba(0, 0, 0, 0.9)",
+            valueBox: false,
+            animationRule: "linear",
+            animationDuration: 1500,
+            borders: false,
+            needleType: "arrow",
+            needleWidth: 2,
+            startAngle: 180,
+            ticksAngle: 180,
+            value: 0 // Initial value
+        }).draw();
+
+        // Initialize Ping Speedometer
+        var pingGauge = new RadialGauge({
+            renderTo: 'pingSpeedometer',
+            width: 300,
+            height: 150,
+            units: "ms",
+            minValue: 0,
+            maxValue: 300,
+            majorTicks: [
+                "0","50","100","150","200","250","300"
+            ],
+            minorTicks: 2,
+            strokeTicks: true,
+            highlights: [
+                { from: 0, to: 100, color: 'rgba(0,255,0,0.5)' },
+                { from: 100, to: 200, color: 'rgba(255,255,0,0.5)' },
+                { from: 200, to: 300, color: 'rgba(255,30,0,0.5)' }
+            ],
+            colorPlate: "#fff",
+            colorMajorTicks: "#000",
+            colorMinorTicks: "#000",
+            colorTitle: "#000",
+            colorUnits: "#000",
+            colorNumbers: "#000",
+            colorNeedle: "rgba(0, 0, 0, 1)",
+            colorNeedleEnd: "rgba(0, 0, 0, 0.9)",
+            valueBox: false,
+            animationRule: "linear",
+            animationDuration: 1500,
+            borders: false,
+            needleType: "arrow",
+            needleWidth: 2,
+            startAngle: 180,
+            ticksAngle: 180,
+            value: 0 // Initial value
+        }).draw();
+
+        // Function to update gauges and tooltips
+        function updateGauges(download, upload, ping) {
+            // Assuming max download/upload speed is 100 Mbps and max ping is 300 ms
+            downloadGauge.value = Math.min(download, 100);
+            uploadGauge.value = Math.min(upload, 100);
+            pingGauge.value = Math.min(ping, 300);
+
+            // Update tooltips
+            document.getElementById('downloadTooltip').innerHTML = `Type: Download<br>Speed: ${download} Mbps`;
+            document.getElementById('uploadTooltip').innerHTML = `Type: Upload<br>Speed: ${upload} Mbps`;
+            document.getElementById('pingTooltip').innerHTML = `Type: Ping<br>Speed: ${ping} ms`;
+        }
+
+        // Handle Test Button Click
+        document.getElementById('testButton').addEventListener('click', function() {
+            // Show loading indicator
+            document.getElementById('loading').style.display = 'block';
+            // Disable the button to prevent multiple clicks
+            document.getElementById('testButton').disabled = true;
+            document.getElementById('testButton').style.cursor = 'not-allowed';
+
+            // Clear previous results
+            document.getElementById('network').innerText = 'Connected Network: N/A';
+            document.getElementById('download').innerText = 'Download Speed: N/A Mbps';
+            document.getElementById('upload').innerText = 'Upload Speed: N/A Mbps';
+            document.getElementById('ping').innerText = 'Ping: N/A ms';
+
+            // Reset gauges
+            updateGauges(0, 0, 0);
+
+            // Send request to backend
+            fetch('/test_speed', {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading indicator
+                document.getElementById('loading').style.display = 'none';
+                // Enable the button
+                document.getElementById('testButton').disabled = false;
+                document.getElementById('testButton').style.cursor = 'pointer';
+
+                if(data.success){
+                    // Update gauges and tooltips
+                    updateGauges(data.download, data.upload, data.ping);
+                    // Update results
+                    document.getElementById('network').innerText = `Connected Network: ${data.server}`;
+                    document.getElementById('download').innerText = `Download Speed: ${data.download} Mbps`;
+                    document.getElementById('upload').innerText = `Upload Speed: ${data.upload} Mbps`;
+                    document.getElementById('ping').innerText = `Ping: ${data.ping} ms`;
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                // Hide loading indicator
+                document.getElementById('loading').style.display = 'none';
+                // Enable the button
+                document.getElementById('testButton').disabled = false;
+                document.getElementById('testButton').style.cursor = 'pointer';
+                console.error('Error:', error);
+                alert('An error occurred while testing the speed.');
+            });
+        });
+    </script>
+
+</body>
+</html>
