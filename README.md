@@ -24,11 +24,13 @@ Follow these steps to set up and run the application:
 1. Open a terminal.
 2. Navigate to the directory where you want to clone the project.
 3. Run the following command to clone the repository:
+4. install required packages
 
    ```bash
    git clone https://github.com/deva0516/internet-speed-test-using-python-flask.git
    cd internet-speed-test-using-python-flask
-
-## Install Required Packages
-   ```bash
    pip install Flask speedtest-cli
+
+## Output
+![Screenshot 2024-10-15 112402](https://github.com/user-attachments/assets/c5e8be9c-6901-4369-9e02-ba3737c5d372)
+   
